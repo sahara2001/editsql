@@ -7,8 +7,11 @@ python3 preprocess.py --dataset=spider --remove_from
 # 2. train and evaluate.
 #    the result (models, logs, prediction outputs) are saved in $LOGDIR
 
-GLOVE_PATH="/home/lily/rz268/dialog2sql/word_emb/glove.840B.300d.txt" # you need to change this
+GLOVE_PATH="/home/felix/Data/word_emb/glove.840B.300d.txt" # you need to change this
 LOGDIR="logs_spider_editsql"
+
+#remove arg
+rm $LOGDIR/args.log
 
 CUDA_VISIBLE_DEVICES=0 python3 run.py --raw_train_filename="data/spider_data_removefrom/train.pkl" \
           --raw_validation_filename="data/spider_data_removefrom/dev.pkl" \

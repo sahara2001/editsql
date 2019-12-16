@@ -1,0 +1,5 @@
+model/bert/data*
+model/data*
+model/data
+data/database
+*save_*
