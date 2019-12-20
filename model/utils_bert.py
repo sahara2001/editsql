@@ -8,6 +8,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .gated_graph_conv import GatedGraphConv
+
 from .bert import tokenization as tokenization
 from .bert.modeling import BertConfig, BertModel
 
@@ -294,10 +296,11 @@ def prepare_input(tokenizer, input_sequence, input_schema, max_seq_length):
     nlu_t = []
     hds = []
 
-    nlu_t1 = input_sequence
-    all_hds = input_schema.column_names_embedder_input
+    nlu_t1 = input_sequence # segmented question
+    all_hds = input_schema.column_names_embedder_input      # table name . column
 
     nlu_tt1 = []
+    print(1111111,nlu_t1,all_hds)
     for (i, token) in enumerate(nlu_t1):
         nlu_tt1 += tokenizer.tokenize(token)
 
@@ -317,6 +320,78 @@ def prepare_input(tokenizer, input_sequence, input_schema, max_seq_length):
         hds.append(current_hds1)
 
     return nlu_t, hds
+
+def prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length):
+    """
+    Return: Nodes(list of tokenized db items)
+    Return: relations(lists of list of related columns), inner list corresponds to edge type
+    """
+    nlu_t = []
+    hds = []
+
+    nlu_t1 = input_sequence # segmented question
+    all_hds = input_schema.column_names_embedder_input      # table name . column
+
+    tables = {}
+    columns = {}
+    nodes = []
+    relations = [[],[],[]] # three edge types
+    all_columns = {}
+
+    print(1111111,nlu_t1,all_hds)
+    for i in all_hds:
+        print(i.split('.'))
+        if i != "*" and len(i.split('.')) > 1:
+            
+            header,col  = i.split('.')
+            if col.strip() != '*':
+                print(header,col)
+                # first add headers
+                if not header in tables:
+                    nodes.append(header)
+                    tables[header] = len(nodes) -1
+                    columns[col]= len(nodes)-1 # add column name to columns with index in nodes as value
+
+                # take redundancy for foreign key
+                if col in columns:
+                    relations[2].append([tables[header],columns[col]])  # add foreign key relation
+                else:
+                    nodes.append(col)
+                    columns[col] = len(nodes) -1
+                    
+                    # assume primary key have "id"
+                    if col.find("id") != -1:
+                        relations[1].append([tables[header],columns[col]])
+                    else:
+                        relations[0].append([tables[header],columns[col]])
+    # tokenize nodes to feed into model
+
+    for i in range(len(nodes)):
+        nodes[i] = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(nodes[i]))
+        
+
+    print(nodes,relations)
+
+
+    # for (i, token) in enumerate(nlu_t1):
+    #     nlu_tt1 += tokenizer.tokenize(token)
+
+    # current_hds1 = []
+    # for hds1 in all_hds:
+    #     new_hds1 = current_hds1 + [hds1]
+    #     tokens1, segment_ids1, i_nlu1, i_hds1, t_to_tt_idx_hds1 = generate_inputs(tokenizer, nlu_tt1, new_hds1)
+    #     if len(segment_ids1) > max_seq_length:
+    #         nlu_t.append(nlu_t1)
+    #         hds.append(current_hds1)
+    #         current_hds1 = [hds1]
+    #     else:
+    #         current_hds1 = new_hds1
+
+    # if len(current_hds1) > 0:
+    #     nlu_t.append(nlu_t1)
+    #     hds.append(current_hds1)
+
+    return nodes,relations
 
 def prepare_input_v2(tokenizer, input_sequence, input_schema):
     nlu_t = []
@@ -353,6 +428,61 @@ def prepare_input_v2(tokenizer, input_sequence, input_schema):
 
     return nlu_t, hds, max_seq_length
 
+def get_gnn_encoding(tokenizer,model_bert,input_sequence,input_schema,bert_input_version='v1',num_out_layers_h=1, max_seq_length=512,num_out_layers_n=1):
+    # only get graph encoding without input_sequence dependency
+    if bert_input_version == 'v1':
+        nodes, relations = prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length)
+    elif bert_input_version == 'v2':
+        raise("not inplemented")
+        nlu_t, hds, max_seq_length = prepare_input_v2(tokenizer, input_sequence, input_schema)
+
+    # TODO: feed into gnn and return embedding
+
+    input_nodes =[ torch.tensor(i, dtype=torch.long).to(device) for i in nodes]
+    print(2222222,type(input),input)
+    all_encoder_layer= model_bert(input_nodes)[0]
+    relations = [torch.tensor(i, dtype=torch.long).to(device) for i in relations]
+    print(333333,all_encoder_layer.size(),relations)
+
+    output = GatedGraphConv(all_encoder_layer,relations)
+    # wemb_n, wemb_h, l_n, l_hpu, l_hs, nlu_tt, t_to_tt_idx, tt_to_t_idx, t_to_tt_idx_hds = get_wemb_bert(bert_config, model_bert, tokenizer, nlu_t, hds, max_seq_length, num_out_layers_n, num_out_layers_h)
+
+    # t_to_tt_idx = t_to_tt_idx[0]
+    # assert len(t_to_tt_idx) == len(input_sequence)
+    # assert sum(len(t_to_tt_idx_hds1) for t_to_tt_idx_hds1 in t_to_tt_idx_hds) == len(input_schema.column_names_embedder_input)
+
+    # assert list(wemb_h.size())[0] == len(input_schema.column_names_embedder_input)
+
+    # utterance_states = []
+    # for i in range(len(t_to_tt_idx)):
+    #     start = t_to_tt_idx[i]
+    #     if i == len(t_to_tt_idx)-1:
+    #         end = l_n[0]
+    #     else:
+    #         end = t_to_tt_idx[i+1]
+    #     utterance_states.append(torch.mean(wemb_n[:,start:end,:], dim=[0,1]))
+    # assert len(utterance_states) == len(input_sequence)
+
+    # schema_token_states = []
+    # cnt = -1
+    # for t_to_tt_idx_hds1 in t_to_tt_idx_hds:
+    #     for t_to_tt_idx_hds11 in t_to_tt_idx_hds1:
+    #       cnt += 1
+    #       schema_token_states1 = []
+    #       for i in range(len(t_to_tt_idx_hds11)):
+    #           start = t_to_tt_idx_hds11[i]
+    #           if i == len(t_to_tt_idx_hds11)-1:
+    #               end = l_hpu[cnt]
+    #           else:
+    #               end = t_to_tt_idx_hds11[i+1]
+    #           schema_token_states1.append(torch.mean(wemb_h[cnt,start:end,:], dim=0))
+    #       assert len(schema_token_states1) == len(input_schema.column_names_embedder_input[cnt].split())
+    #       schema_token_states.append(schema_token_states1)
+
+    # assert len(schema_token_states) == len(input_schema.column_names_embedder_input)
+
+    return output
+    
 def get_bert_encoding(bert_config, model_bert, tokenizer, input_sequence, input_schema, bert_input_version='v1', max_seq_length=512, num_out_layers_n=1, num_out_layers_h=1):
     if bert_input_version == 'v1':
         nlu_t, hds = prepare_input(tokenizer, input_sequence, input_schema, max_seq_length)

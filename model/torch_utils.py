@@ -136,7 +136,47 @@ def forward_one_multilayer(rnns, lstm_input, layer_states, dropout_amount=0.):
         hidden_states.append(layer_h)
 
     return (cell_states, hidden_states), state, new_states
+    
+def encode_sequence_bert(embedding, rnns, dropout_amount=0.):
+    """ Encodes a sequence given RNN cells and an embedding function.
 
+    Inputs:
+        embedding (torch tensor of sequence): The sequence embedding to encode.
+        rnns (list of dy._RNNBuilder): The RNNs to use.
+        size (int): The size of the RNN.
+        dropout_amount (float, optional): The amount of dropout to apply.
+
+    Returns:
+        (list of dy.Expression, list of dy.Expression), list of dy.Expression,
+        where the first pair is the (final cell memories, final cell states) of
+        all layers, and the second list is a list of the final layer's cell
+        state for all tokens in the sequence.
+    """
+
+    batch_size = 1
+    layer_states = []
+    for rnn in rnns:
+        hidden_size = rnn.weight_hh.size()[1]
+        
+        # h_0 of shape (batch, hidden_size)
+        # c_0 of shape (batch, hidden_size)
+        if rnn.weight_hh.is_cuda:
+            h_0 = torch.cuda.FloatTensor(batch_size,hidden_size).fill_(0)
+            c_0 = torch.cuda.FloatTensor(batch_size,hidden_size).fill_(0)
+        else:
+            h_0 = torch.zeros(batch_size,hidden_size)
+            c_0 = torch.zeros(batch_size,hidden_size)
+
+        layer_states.append((h_0, c_0))
+
+    outputs = []
+    for embed in embedding:
+        rnn_input = embed
+        (cell_states, hidden_states), output, layer_states = forward_one_multilayer(rnns,rnn_input,layer_states,dropout_amount)
+
+        outputs.append(output)
+
+    return (cell_states, hidden_states), outputs
 
 def encode_sequence(sequence, rnns, embedder, dropout_amount=0.):
     """ Encodes a sequence given RNN cells and an embedding function.

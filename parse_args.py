@@ -59,6 +59,9 @@ def interpret_args():
     parser.add_argument('--freeze', type=bool, default=False)
     parser.add_argument('--scheduler', type=bool, default=False)
 
+    parser.add_argument('--use_gnn', type=bool, default=False) # add gnn
+
+
     parser.add_argument('--use_bert', type=bool, default=False)
     parser.add_argument("--bert_type_abb", type=str, help="Type of BERT model to load. e.g.) uS, uL, cS, cL, and mcS")
     parser.add_argument("--bert_input_version", type=str, default='v1')
@@ -80,7 +83,7 @@ def interpret_args():
     parser.add_argument('--encoder_state_size', type=int, default=300)
     parser.add_argument('--decoder_state_size', type=int, default=300)
 
-    parser.add_argument('--encoder_num_layers', type=int, default=1)
+    parser.add_argument('--encoder_num_layers', type=int, default=2)
     parser.add_argument('--decoder_num_layers', type=int, default=2)
     parser.add_argument('--snippet_num_layers', type=int, default=1)
 

@@ -9,13 +9,15 @@ from . import utils_bert
 
 from data_util.vocabulary import DEL_TOK, UNK_TOK
 
-from .encoder import Encoder
+from .encoder import Encoder, Encoder_Gnn
 from .embedder import Embedder
 from .token_predictor import construct_token_predictor
 
 import numpy as np
 
 from data_util.atis_vocab import ATISVocabulary
+
+from .gated_graph_conv import GatedGraphConv
 
 def get_token_indices(token, index_to_token):
     """ Maps from a gold token (string) to a list of indices.
@@ -143,6 +145,16 @@ class ATISModel(torch.nn.Module):
 
         if params.use_bert:
             self.model_bert, self.tokenizer, self.bert_config = utils_bert.get_bert(params)
+
+        if params.use_gnn:
+            # use bert to encoder nodes
+            self.model_bert, self.tokenizer, self.bert_config = utils_bert.get_bert(params)
+
+            encoder_input_size = self.bert_config.hidden_size
+            encoder_output_size = params.encoder_state_size
+
+            self.gnn = GatedGraphConv(encoder_input_size, 2, 3) #input_dim, num_timesteps, num_edge_types,
+            self.gnn_encoder = Encoder_Gnn(1, encoder_input_size, encoder_output_size) #num_layers, input_size, state_size
 
         if 'atis' not in params.data_directory:
             if params.use_bert:

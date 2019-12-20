@@ -7,8 +7,11 @@ python3 preprocess.py --dataset=sparc
 # 2. train and evaluate.
 #    the result (models, logs, prediction outputs) are saved in $LOGDIR
 
-GLOVE_PATH="/home/lily/rz268/dialog2sql/word_emb/glove.840B.300d.txt" # you need to change this
+GLOVE_PATH="/home/felix/Data/word_emb/glove.840B.300d.txt"
 LOGDIR="logs_sparc_cdseq2seq"
+
+#remove arg
+rm $LOGDIR/args.log
 
 CUDA_VISIBLE_DEVICES=0 python3 run.py --raw_train_filename="data/sparc_data/train.pkl" \
           --raw_validation_filename="data/sparc_data/dev.pkl" \

@@ -15,7 +15,7 @@ from .attention import Attention
 from .model import ATISModel, encode_snippets_with_states, get_token_indices
 from data_util.utterance import ANON_INPUT_KEY
 
-from .encoder import Encoder
+from .encoder import Encoder, SchemaEncoder1
 from .decoder import SequencePredictorWithSchema
 
 from . import utils_bert
@@ -56,7 +56,7 @@ class SchemaInteractionATISModel(ATISModel):
             if params.use_bert:
                 schema_encoder_input_size = self.bert_config.hidden_size
 
-            self.schema_encoder = Encoder(schema_encoder_num_layer, schema_encoder_input_size, schema_encoder_state_size)
+            self.schema_encoder = SchemaEncoder1(schema_encoder_num_layer, schema_encoder_input_size, schema_encoder_state_size)
 
         # self-attention
         if self.params.use_schema_self_attention:
@@ -255,6 +255,11 @@ class SchemaInteractionATISModel(ATISModel):
 
       return schema_states
 
+    def get_gnn_encoding(self,input_schema, gnn):
+        output = utils_bert.get_gnn_encoding(self.tokenizer, self.model_bert,None, input_schema, bert_input_version=self.params.bert_input_version) # tokenizer,input_sequence,input_schema,bert_input_version='v1',num_out_layers_h=1, max_seq_length=512,num_out_layers_n=1
+
+        return output
+
     def get_bert_encoding(self, input_sequence, input_schema, discourse_state, dropout):
         utterance_states, schema_token_states = utils_bert.get_bert_encoding(self.bert_config, self.model_bert, self.tokenizer, input_sequence, input_schema, bert_input_version=self.params.bert_input_version, num_out_layers_n=1, num_out_layers_h=1)
 
@@ -367,9 +372,12 @@ class SchemaInteractionATISModel(ATISModel):
         # Schema and schema embeddings
         input_schema = interaction.get_schema()
         schema_states = []
-
-        if input_schema and not self.params.use_bert:
+        # here
+        if input_schema and not self.params.use_bert and not self.params.use_gnn:
             schema_states = self.encode_schema_bow_simple(input_schema)
+
+        if input_schema and self.params.use_gnn and not self.params.use_bert:
+            schema_states = self.get_gnn_encoding(input_schema,self.gnn)
 
         for utterance_index, utterance in enumerate(interaction.gold_utterances()):
             if interaction.identifier in LIMITED_INTERACTIONS and utterance_index > LIMITED_INTERACTIONS[interaction.identifier]:
@@ -504,8 +512,11 @@ class SchemaInteractionATISModel(ATISModel):
         input_schema = interaction.get_schema()
         schema_states = []
 
-        if input_schema and not self.params.use_bert:
+        if input_schema and not self.params.use_bert and not self.params.use_gnn:
             schema_states = self.encode_schema_bow_simple(input_schema)
+
+        if input_schema and self.params.use_gnn and not self.params.use_bert:
+            schema_states = self.get_gnn_encoding(input_schema,self.gnn)
 
         interaction.start_interaction()
         while not interaction.done():
@@ -618,8 +629,12 @@ class SchemaInteractionATISModel(ATISModel):
         # Schema and schema embeddings
         input_schema = interaction.get_schema()
         schema_states = []
-        if input_schema and not self.params.use_bert:
+        if input_schema and not self.params.use_bert and not self.params.use_gnn:
             schema_states = self.encode_schema_bow_simple(input_schema)
+
+        if input_schema and self.params.use_gnn and not self.params.use_bert:
+            schema_states = self.get_gnn_encoding(input_schema,self.gnn)
+            _,schema_states = self.gnn_encoder(schema_states)
 
 
         for utterance in interaction.gold_utterances():
