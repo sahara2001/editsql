@@ -153,8 +153,11 @@ class ATISModel(torch.nn.Module):
             encoder_input_size = self.bert_config.hidden_size
             encoder_output_size = params.encoder_state_size
 
-            self.gnn = GatedGraphConv(encoder_input_size, 2, 3) #input_dim, num_timesteps, num_edge_types,
-            self.gnn_encoder = Encoder_Gnn(1, encoder_input_size, encoder_output_size) #num_layers, input_size, state_size
+            self.gnn = GatedGraphConv(encoder_output_size, 2, 3) #input_dim, num_timesteps, num_edge_types,
+
+            # two encoders, the second one summarize from bert embedding of nodes, the first one generate one embedding for schema
+            self.gnn_encoder1 = Encoder_Gnn(1, encoder_input_size, encoder_output_size) #num_layers, input_size, state_size
+            self.gnn_encoder2 = Encoder_Gnn(1, encoder_output_size, encoder_output_size)
 
         if 'atis' not in params.data_directory:
             if params.use_bert:

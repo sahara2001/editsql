@@ -136,7 +136,7 @@ def forward_one_multilayer(rnns, lstm_input, layer_states, dropout_amount=0.):
         hidden_states.append(layer_h)
 
     return (cell_states, hidden_states), state, new_states
-    
+
 def encode_sequence_bert(embedding, rnns, dropout_amount=0.):
     """ Encodes a sequence given RNN cells and an embedding function.
 
@@ -152,7 +152,7 @@ def encode_sequence_bert(embedding, rnns, dropout_amount=0.):
         all layers, and the second list is a list of the final layer's cell
         state for all tokens in the sequence.
     """
-
+    # print(embedding.size())
     batch_size = 1
     layer_states = []
     for rnn in rnns:

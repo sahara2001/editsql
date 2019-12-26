@@ -8,11 +8,14 @@ from .utterance import Utterance, OUTPUT_KEY, ANON_INPUT_KEY
 import torch
 
 class Schema:
-    def __init__(self, table_schema, simple=False):
+    def __init__(self, table_schema, simple=False,gnn=True):
         if simple:
             self.helper1(table_schema)
         else:
             self.helper2(table_schema)
+        # if gnn:
+        #     self.prepare_input_gnn()
+        #     print(self.nodes)
 
     def helper1(self, table_schema):
         self.table_schema = table_schema
@@ -118,11 +121,81 @@ class Schema:
 
         self.num_col = len(self.column_names_surface_form)
 
+    def prepare_input_gnn(self,pad_len=12):
+        """
+        Return: Nodes(list of tokenized db items)
+        Return: masks 
+        Return: relations(lists of list of related columns), inner list corresponds to edge type
+        """
+
+        all_hds = self.column_names_embedder_input      # table name . column
+
+        tables = []
+        tb_name = {} # index of header in node - len(nodes)
+        columns = {}
+        nodes = []
+        relations = [[],[],[]] # three edge types, we use tb_name.col as embedding 
+        # print(relations)
+        all_columns = {}
+
+        # print(1111111,nlu_t1,all_hds)
+
+        nodes.append('*')
+        for i in all_hds:
+            # print(i.split('.'))
+            if i != "*" and len(i.split('.')) > 1:
+                
+                header,col  = i.split('.')
+                # if col.strip() != '*':
+                # print(header,col)
+                # first add headers
+                nodes.append(i)
+                # if not col in columns:
+                if not header in tables:
+                    tables.append(header) 
+                    tb_name[header] = len(tables) -1
+                    #columns[col]= len(nodes)-1 # add column name to columns with index in nodes as value
+
+                # take redundancy for foreign key
+                if col in columns: # find('id') != -1
+                    # print('key')
+                    relations[2].append([tb_name[header],columns[col]])  # add foreign key relation
+                else:
+                    # column id
+                    columns[col] = len(nodes) -1
+                    
+                    # assume primary key have "id"
+                    if col.find("id") != -1:
+                        # print('primary')
+                        relations[1].append([tb_name[header],columns[col]])
+                    else:
+                        relations[0].append([tb_name[header],columns[col]])
+    # for *
+
+        # nodes += tables
+        base = len(nodes)
+        nodes += tables
+        for i in relations:
+            for j in i:
+                j[0] += base
+        # tokenize nodes to feed into model
+        
+            # print(nodes[i],masks[i])
+
+        self.nodes = nodes
+        self.relations =  relations
+        # self.masks = masks
+        # self.new_schema = new_schema
+        self.num_col = len(self.nodes)
+
+
     def __len__(self):
         return self.num_col
 
     def in_vocabulary(self, column_name, surface_form=False):
+        # print(column_name)
         if surface_form:
+            print(self.column_names_surface_form_to_id)
             return column_name in self.column_names_surface_form_to_id
         else:
             return column_name in self.column_names_embedder_input_to_id
@@ -139,8 +212,36 @@ class Schema:
         column_name_embeddings = torch.stack(column_name_embeddings, dim=0)
         return torch.mean(column_name_embeddings, dim=0)
 
-    def set_column_name_embeddings(self, column_name_embeddings):
+    def set_column_name_embeddings(self, column_name_embeddings, column_names=None):
+        # print(self.column_names_embedder_input_to_id,self.column_names_surface_form_to_id)
+        if column_names and len(column_names[1]) > 1 :
+            # print(1231213123,column_names)
+            self.column_names_surface_form = column_names
+            
+            # surface form is not quite correct
+            self.column_names_embedder_input = [i.replace(" . ", ".").replace(" ","_") for i in column_names]
+            self.column_names_surface_form = [i.replace(" . ", ".").replace(" ","_").replace("."," . ") for i in column_names]
+            for i,item in enumerate(self.column_names_surface_form):
+                self.column_names_surface_form_to_id[item] = i
+            for i,item in enumerate(self.column_names_embedder_input):
+                self.column_names_embedder_input_to_id[item] = i
+            # print(self.column_names_embedder_input)
+            # print(self.column_names_surface_form)
+        #     len1 = len(self.column_names_surface_form)
+        #     # self.column_names_surface_form_to_id = {}
+            # self.column_names_embedder_input_to_id = {}
+            # for i in range(len(column_names)):
+            #     self.column_names_surface_form_to_id[column_names[i]] = i + len1 
+            
+            #     self.column_names_embedder_input_to_id[column_names[i]] = i + len1
+
+            # self.column_names_surface_form += column_names
+            # self.column_names_embedder_input += column_names
+            self.num_col = len(column_names)
+
+        # self.column_name_embeddings = [torch.zeros(column_name_embeddings[0].size(0)).to(device)] * len1 + column_name_embeddings
         self.column_name_embeddings = column_name_embeddings
+        # print(len(self.column_name_embeddings),self.num_col)
         assert len(self.column_name_embeddings) == self.num_col
 
     def column_name_embedder(self, column_name, surface_form=False):

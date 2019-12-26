@@ -73,18 +73,18 @@ class Vocabulary:
 
         self.id_to_token = []
         self.token_to_id = {}
-
+        # print(sequences)
         for i, word_type in enumerate(vocab):
             self.id_to_token.append(word_type)
             self.token_to_id[word_type] = i
-
+        # print(self.token_to_id)
         # Load the previous vocab, if it exists.
         if os.path.exists(filename):
             infile = open(filename, 'rb')
             loaded_vocab = pickle.load(infile)
             infile.close()
-
-            print("Loaded vocabulary from " + str(filename))
+            # print(loaded_vocab)
+            # print("Loaded vocabulary from " + str(filename))
             if loaded_vocab.id_to_token != self.id_to_token \
                 or loaded_vocab.token_to_id != self.token_to_id:
                 print("Loaded vocabulary is different than generated vocabulary.")

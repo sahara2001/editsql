@@ -225,6 +225,7 @@ class SchemaTokenPredictor(TokenPredictor):
             final_scores = torch.cat([final_scores, snippet_scores], dim=0)
             aligned_tokens.extend(snippet_tokens)
 
+        # schema is in the form of table.column form, possible improvement?
         schema_states = torch.stack(schema_states, dim=1)
         schema_scores, schema_tokens = score_schema_tokens(input_schema, schema_states, self._get_schema_token_scorer(intermediate_state))
 
@@ -248,7 +249,7 @@ class SchemaTokenPredictor(TokenPredictor):
                 query_scores = query_scores.squeeze()
 
         final_scores = final_scores.squeeze()
-
+        
         return TokenPrediction(final_scores, aligned_tokens, utterance_attention_results, schema_attention_results, query_attention_results, copy_switch, query_scores, query_tokens, decoder_state)
 
 

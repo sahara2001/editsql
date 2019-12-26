@@ -6,7 +6,7 @@ from torch.nn import Parameter as Param, init
 from torch_geometric.data import Data
 from torch_geometric.nn.conv import MessagePassing
 
-
+#(only work for this project!)
 class GatedGraphConv(MessagePassing):
     r"""The gated graph convolution operator from the `"Gated Graph Sequence
     Neural Networks" <https://arxiv.org/abs/1511.05493>`_ paper
@@ -68,11 +68,16 @@ class GatedGraphConv(MessagePassing):
 
         for t in range(self.num_timesteps):
             new_h = []
+            # print(t)
             for e in range(self.num_edge_types):
                 if len(edge_indices[e]) == 0:
                     continue
                 m = self.dropout(torch.matmul(h, self.weight[t, e]) + self.bias[t, e])
-                new_h.append(self.propagate(edge_indices[e], size=(x.size(0), x.size(0)), x=m))
+                # print(edge_indices[e].size())
+                # if edge_indices[e].size(0) == 1: # transpose when only one edge encountered (should be (2,1) but (1,2) )
+                new_h.append(self.propagate(edge_indices[e].transpose(0,1), size=(x.size(0), x.size(0)), x=m)) # transpose to make edges [2,n] for propagation (only for this project!)
+                # else:
+                #     new_h.append(self.propagate(edge_indices[e], size=(x.size(0), x.size(0)), x=m))
             m_sum = torch.sum(torch.stack(new_h), dim=0)
             h = self.rnn(m_sum, h)
 
@@ -86,10 +91,19 @@ class GatedGraphConv(MessagePassing):
 if __name__ == '__main__':
     gcn = GatedGraphConv(input_dim=10, num_timesteps=3, num_edge_types=3)
     data = Data(torch.zeros((5, 10)), edge_index=[
-        torch.tensor([[1,2],[2,3]]),
+        torch.tensor([[0,2],[2,3]]),
         torch.tensor([[1,3],[0,1]]),
         torch.tensor([[1,4],[2,3]]),
     ])
+    
+    edge1 = [torch.tensor([[ 0,  2],[ 0,  3],[ 0,  4],[ 0,  5],[ 0,  6],[ 0,  7],[ 0,  8],[ 9, 10],[ 9, 11],[ 9, 14], [ 9, 15]]),
+            torch.tensor([[ 0,  1],[ 9, 12],[ 9, 13],[ 9, 16]]), 
+            torch.tensor([[9, 1]])]
+            
     output = gcn(data.x, data.edge_index)
-
+    print(torch.tensor([[9, 1],[0,11]]),torch.tensor([[9, 1]]))
+    print(output)
+    gcn = GatedGraphConv(input_dim=300, num_timesteps=3, num_edge_types=3)
+    emb = torch.zeros((20,300))
+    output = gcn(emb,edge1)
     print(output)

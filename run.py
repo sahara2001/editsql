@@ -128,6 +128,7 @@ def train(model, data, params):
         model.set_dropout(0.)
 
         # Run an evaluation step on a sample of the training data.
+        print('EEEEEEEEEEEEEEEEEEEEEEE')
         train_eval_results = eval_fn(training_sample,
                                      model,
                                      params.train_maximum_sql_length,
@@ -323,7 +324,7 @@ def main():
 
     sys.stdout.flush()
 
-    last_save_file = ""
+    last_save_file = "" #"logs_sparc_editsql_gnn/save_14"
 
     if params.train:
         last_save_file = train(model, data, params)

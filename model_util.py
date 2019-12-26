@@ -195,11 +195,13 @@ def train_epoch_with_interactions(interaction_batches,
         batch_loss = model.train_step(interaction, params.train_maximum_sql_length)
 
         loss_sum += batch_loss
+
         torch.cuda.empty_cache()
 
         progbar.update(i)
 
     progbar.finish()
+    print(loss_sum,len(interaction_batches))
 
     total_loss = loss_sum / len(interaction_batches)
 
@@ -406,23 +408,27 @@ def evaluate_interaction_sample(sample,
         #     continue
         # elif not use_gpu and interaction.identifier not in ignore_with_gpu:
         #     continue
-        try:
-            with torch.no_grad():
-                if use_predicted_queries:
-                    example_preds = model.predict_with_predicted_queries(
-                        interaction,
-                        max_generation_length)
-                else:
-                    example_preds = model.predict_with_gold_queries(
-                        interaction,
-                        max_generation_length,
-                        feed_gold_query=gold_forcing)
-                torch.cuda.empty_cache()
-        except RuntimeError as exception:
-            print("Failed on interaction: " + str(interaction.identifier))
-            print(exception)
-            print("\n\n")
-            exit()
+        # try:
+            # print(i)
+        if i == 0:
+            print(interaction.interaction,interaction.interaction.utterances,interaction.interaction.schema.column_names_surface_form,interaction.interaction.input_seqs())
+        with torch.no_grad():
+            if use_predicted_queries:
+                # print(111111)
+                example_preds = model.predict_with_predicted_queries(
+                    interaction,
+                    max_generation_length)
+            else:
+                example_preds = model.predict_with_gold_queries(
+                    interaction,
+                    max_generation_length,
+                    feed_gold_query=gold_forcing)
+            torch.cuda.empty_cache()
+    # except RuntimeError as exception:
+    #     print("Failed on interaction: " + str(interaction.identifier))
+    #     print(exception)
+    #     print("\n\n")
+    #     exit()
 
         predictions.extend(example_preds)
 

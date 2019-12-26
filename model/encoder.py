@@ -185,7 +185,7 @@ class Encoder_Gnn(torch.nn.Module):
         backward_outputs = backward_outputs[::-1]
 
         final_outputs = []
-        for i in range(len(sequence)):
+        for i in range(len(last_hidden)):
             final_outputs.append(torch.cat([forward_outputs[i], backward_outputs[i]], dim=0))
 
         return (cell_memories, hidden_states), final_outputs

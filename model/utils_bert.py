@@ -300,7 +300,7 @@ def prepare_input(tokenizer, input_sequence, input_schema, max_seq_length):
     all_hds = input_schema.column_names_embedder_input      # table name . column
 
     nlu_tt1 = []
-    print(1111111,nlu_t1,all_hds)
+    # print(1111111,nlu_t1,all_hds)
     for (i, token) in enumerate(nlu_t1):
         nlu_tt1 += tokenizer.tokenize(token)
 
@@ -321,7 +321,7 @@ def prepare_input(tokenizer, input_sequence, input_schema, max_seq_length):
 
     return nlu_t, hds
 
-def prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length):
+def prepare_input_gnn0(tokenizer, input_sequence, input_schema, max_seq_length,pad_len=12):
     """
     Return: Nodes(list of tokenized db items)
     Return: relations(lists of list of related columns), inner list corresponds to edge type
@@ -332,45 +332,72 @@ def prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length):
     nlu_t1 = input_sequence # segmented question
     all_hds = input_schema.column_names_embedder_input      # table name . column
 
-    tables = {}
+    tables = []
+    tb_name = {} # index of header in node - len(nodes)
     columns = {}
     nodes = []
-    relations = [[],[],[]] # three edge types
+    relations = [[],[],[]] # three edge types, we use tb_name.col as embedding 
+    # print(relations)
     all_columns = {}
 
-    print(1111111,nlu_t1,all_hds)
+    # print(1111111,nlu_t1,all_hds)
+
+    nodes.append('*')
     for i in all_hds:
-        print(i.split('.'))
+        # print(i.split('.'))
         if i != "*" and len(i.split('.')) > 1:
             
             header,col  = i.split('.')
-            if col.strip() != '*':
-                print(header,col)
-                # first add headers
-                if not header in tables:
-                    nodes.append(header)
-                    tables[header] = len(nodes) -1
-                    columns[col]= len(nodes)-1 # add column name to columns with index in nodes as value
+            # if col.strip() != '*':
+            # print(header,col)
+            # first add headers
+            nodes.append(i)
+            # if not col in columns:
+            if not header in tables:
+                tables.append(header) 
+                tb_name[header] = len(tables) -1
+                #columns[col]= len(nodes)-1 # add column name to columns with index in nodes as value
 
-                # take redundancy for foreign key
-                if col in columns:
-                    relations[2].append([tables[header],columns[col]])  # add foreign key relation
+            # take redundancy for foreign key
+            if col in columns: # find('id') != -1
+                # print('key')
+                relations[2].append([tb_name[header],columns[col]])  # add foreign key relation
+            else:
+                # column id
+                columns[col] = len(nodes) -1
+                
+                # assume primary key have "id"
+                if col.find("id") != -1:
+                    # print('primary')
+                    relations[1].append([tb_name[header],columns[col]])
                 else:
-                    nodes.append(col)
-                    columns[col] = len(nodes) -1
-                    
-                    # assume primary key have "id"
-                    if col.find("id") != -1:
-                        relations[1].append([tables[header],columns[col]])
-                    else:
-                        relations[0].append([tables[header],columns[col]])
+                    relations[0].append([tb_name[header],columns[col]])
+ # for *
+
+    # nodes += tables
+    base = len(nodes)
+    nodes += tables
+    for i in relations:
+        for j in i:
+            j[0] += base
     # tokenize nodes to feed into model
-
+    masks = []
+    new_schema = []
     for i in range(len(nodes)):
-        nodes[i] = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(nodes[i]))
+        new_schema.append(nodes[i])
+        # print(nodes[i])
+        nodes[i] = tokenizer.tokenize(nodes[i])
+        masks.append([1]*len(nodes[i]) + [0]*(pad_len-len(nodes[i])))
         
+        nodes[i] += ['[PAD]'] * (pad_len-len(nodes[i]))
+        nodes[i] = tokenizer.convert_tokens_to_ids(nodes[i])
+        # print(nodes[i],masks[i])
 
-    print(nodes,relations)
+    # print(relations)
+        
+    
+
+    # print(nodes,relations)
 
 
     # for (i, token) in enumerate(nlu_t1):
@@ -391,7 +418,123 @@ def prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length):
     #     nlu_t.append(nlu_t1)
     #     hds.append(current_hds1)
 
-    return nodes,relations
+    return nodes,relations,masks, new_schema
+
+def prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length,pad_len=12):
+    """
+    Return: Nodes(list of tokenized db items)
+    Return: relations(lists of list of related columns), inner list corresponds to edge type
+    """
+    nlu_t = []
+    hds = []
+
+    nlu_t1 = input_sequence # segmented question
+    all_hds = input_schema.column_names_embedder_input      # table name . column
+
+    tables = []
+    tb_name = {} # index of header in node - len(nodes)
+    columns = {}
+    nodes = []
+    relations = [[],[],[]] # three edge types, we use tb_name.col as embedding 
+    # print(relations)
+    all_columns = {}
+
+    # print(1111111,nlu_t1,all_hds)
+
+    nodes.append('*')
+    for i in all_hds:
+        # print(i.split('.'))
+        if i != "*" and len(i.split('.')) > 1:
+            
+            header,col  = i.split('.')
+            # if col.strip() != '*':
+            # print(header,col)
+            # first add headers
+            nodes.append(i)
+            # if not col in columns:
+            if not header in tables:
+                tables.append(header) 
+                tb_name[header] = len(tables) -1
+                #columns[col]= len(nodes)-1 # add column name to columns with index in nodes as value
+
+            # take redundancy for foreign key
+            if col in columns: # find('id') != -1
+                # print('key')
+                relations[2].append([tb_name[header],columns[col]])  # add foreign key relation
+            else:
+                # column id
+                columns[col] = len(nodes) -1
+                
+                # assume primary key have "id"
+                if col.find("id") != -1:
+                    # print('primary')
+                    relations[1].append([tb_name[header],columns[col]])
+                else:
+                    relations[0].append([tb_name[header],columns[col]])
+ # for *
+
+    # nodes += tables
+    base = len(nodes)
+    nodes += tables
+    for i in relations:
+        for j in i:
+            j[0] += base
+    # tokenize nodes to feed into model
+    masks = []
+    new_schema = []
+    for i in range(len(nodes)):
+        new_schema.append(nodes[i])
+        # print(nodes[i])
+        nodes[i] = tokenizer.tokenize(nodes[i])
+        # print(nodes[i])
+        # masks.append([1]*len(nodes[i]) + [0]*(pad_len-len(nodes[i])))
+        
+        # nodes[i] += ['[PAD]'] * (pad_len-len(nodes[i]))
+        # nodes[i] = tokenizer.convert_tokens_to_ids(nodes[i])
+        # print(nodes[i],masks[i])
+
+    # print(relations)
+        
+    
+
+    # print(nodes,relations)
+
+
+    # for (i, token) in enumerate(nlu_t1):
+    #     nlu_tt1 += tokenizer.tokenize(token)
+
+    # current_hds1 = []
+    # for hds1 in all_hds:
+    #     new_hds1 = current_hds1 + [hds1]
+    #     tokens1, segment_ids1, i_nlu1, i_hds1, t_to_tt_idx_hds1 = generate_inputs(tokenizer, nlu_tt1, new_hds1)
+    #     if len(segment_ids1) > max_seq_length:
+    #         nlu_t.append(nlu_t1)
+    #         hds.append(current_hds1)
+    #         current_hds1 = [hds1]
+    #     else:
+    #         current_hds1 = new_hds1
+
+    # if len(current_hds1) > 0:
+    #     nlu_t.append(nlu_t1)
+    #     hds.append(current_hds1)
+
+    return nodes,relations, new_schema
+
+def prepare_input_gnn2(schema,tokenizer):
+
+    nodes = schema.nodes
+    masks = []
+    new_schema = []
+    for i in range(len(nodes)):
+        new_schema.append(nodes[i])
+        # print(nodes[i])
+        nodes[i] = tokenizer.tokenize(nodes[i])
+        masks.append([1]*len(nodes[i]) + [0]*(pad_len-len(nodes[i])))
+        
+        nodes[i] += ['[PAD]'] * (pad_len-len(nodes[i]))
+        nodes[i] = tokenizer.convert_tokens_to_ids(nodes[i])
+
+    return nodes, masks, new_schema
 
 def prepare_input_v2(tokenizer, input_sequence, input_schema):
     nlu_t = []
@@ -428,23 +571,56 @@ def prepare_input_v2(tokenizer, input_sequence, input_schema):
 
     return nlu_t, hds, max_seq_length
 
-def get_gnn_encoding(tokenizer,model_bert,input_sequence,input_schema,bert_input_version='v1',num_out_layers_h=1, max_seq_length=512,num_out_layers_n=1):
+def get_gnn_encoding(tokenizer,model_bert,input_sequence,input_schema,gnn,gnn_encoder1,embedder=None,bert_input_version='v1',num_out_layers_h=1, max_seq_length=512,num_out_layers_n=1):
     # only get graph encoding without input_sequence dependency
+    nodes=relations=new_schema=None
     if bert_input_version == 'v1':
-        nodes, relations = prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length)
+        nodes, relations, new_schema = prepare_input_gnn( tokenizer, input_sequence, input_schema, max_seq_length)
     elif bert_input_version == 'v2':
         raise("not inplemented")
         nlu_t, hds, max_seq_length = prepare_input_v2(tokenizer, input_sequence, input_schema)
 
+    # relations = input_schema.relations
+    
     # TODO: feed into gnn and return embedding
 
-    input_nodes =[ torch.tensor(i, dtype=torch.long).to(device) for i in nodes]
-    print(2222222,type(input),input)
-    all_encoder_layer= model_bert(input_nodes)[0]
-    relations = [torch.tensor(i, dtype=torch.long).to(device) for i in relations]
-    print(333333,all_encoder_layer.size(),relations)
+    # print(relations)
 
-    output = GatedGraphConv(all_encoder_layer,relations)
+    
+    # print(2222222,type(input_nodes),input_nodes)
+    masks = None
+    input_nodes = nodes
+    all_encoder_layer = None
+    if not embedder:
+        input_nodes =[ torch.tensor([i], dtype=torch.long).to(device) for i in nodes]
+        masks = torch.tensor(masks, dtype=torch.long).to(device)
+        with torch.no_grad():
+            all_encoder_layer= torch.cat([torch.cat(model_bert(i,j)[0],1) for i,j in zip(input_nodes,masks)],0)
+
+        all_encoder_layer = torch.cat([gnn_encoder1(i.unsqueeze(0))[0][1][0].unsqueeze(0) for i in all_encoder_layer],0) 
+    else:
+        all_encoder_layer = torch.cat([torch.cat([embedder(token).unsqueeze(0) for token in i],0).mean(0).unsqueeze(0) for i in input_nodes],0)
+
+    if len(nodes) <=1:
+        print(input_schema.column_names_embedder_input)
+        print(input_schema.num_col)
+        print(input_sequence)
+    assert len(nodes) > 1
+    assert len(relations[0]) > 0
+    # print(123123123,all_encoder_layer[0][0].size(),len(all_encoder_layer[0]),len(all_encoder_layer),len(all_encoder_layer[3]),len(all_encoder_layer[10]))
+    # print(123123, all_encoder_layer.size(),type(all_encoder_layer))
+    # all_encoder_layer = all_encoder_layer.permute(2,1,0)
+    # print(all_encoder_layer.size())
+    # print([gnn_encoder1(i.unsqueeze(0))[0][1][0] for i in all_encoder_layer][0])
+    # all_encoder_layer = torch.cat([gnn_encoder1(i.unsqueeze(0))[0][1][0].unsqueeze(0) for i in all_encoder_layer],0) 
+    # all_encoder_layer = [gnn_encoder1(i.squeeze()) for i in all_encoder_layer] 
+    # all_encoder_layer = [gnn_encoder1(torch.cat(i,1))[0][1] for i in all_encoder_layer] # get hidden layer output as representation for each schema items
+    
+    relations = [torch.tensor(i, dtype=torch.long).to(device) for i in relations]
+    # print(333333,relations, all_encoder_layer.size())
+
+    output = [i for i in gnn(all_encoder_layer,relations)]
+    # print(output)
     # wemb_n, wemb_h, l_n, l_hpu, l_hs, nlu_tt, t_to_tt_idx, tt_to_t_idx, t_to_tt_idx_hds = get_wemb_bert(bert_config, model_bert, tokenizer, nlu_t, hds, max_seq_length, num_out_layers_n, num_out_layers_h)
 
     # t_to_tt_idx = t_to_tt_idx[0]
@@ -481,7 +657,7 @@ def get_gnn_encoding(tokenizer,model_bert,input_sequence,input_schema,bert_input
 
     # assert len(schema_token_states) == len(input_schema.column_names_embedder_input)
 
-    return output
+    return output,new_schema
     
 def get_bert_encoding(bert_config, model_bert, tokenizer, input_sequence, input_schema, bert_input_version='v1', max_seq_length=512, num_out_layers_n=1, num_out_layers_h=1):
     if bert_input_version == 'v1':

@@ -13,7 +13,8 @@ LOGDIR="logs_sparc_editsql_gnn"
 #remove arg
 rm $LOGDIR/args.log
 
-CUDA_VISIBLE_DEVICES=0 python3 run.py --raw_train_filename="data/sparc_data_removefrom/train.pkl" \
+# get prev query 
+CUDA_VISIBLE_DEVICES=1 python3 run.py --raw_train_filename="data/sparc_data_removefrom/train.pkl" \
           --raw_validation_filename="data/sparc_data_removefrom/dev.pkl" \
           --database_schema_filename="data/sparc_data_removefrom/tables.json" \
           --embedding_filename=$GLOVE_PATH \
@@ -21,12 +22,14 @@ CUDA_VISIBLE_DEVICES=0 python3 run.py --raw_train_filename="data/sparc_data_remo
           --input_key="utterance" \
           --state_positional_embeddings=1 \
           --discourse_level_lstm=1 \
+          --interaction_level=1 \
           --use_utterance_attention=1 \
-          --use_previous_query=1 \
+          --use_schema_self_attention=1 \
           --use_query_attention=1 \
+          --use_previous_query=1 \
           --use_gnn=1 \
           --bert_type_abb=uS \
-          --interaction_level=1 \
+          --use_schema_encoder_2=1 \
           --reweight_batch=1 \
           --freeze=1 \
           --train=1 \

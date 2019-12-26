@@ -29,7 +29,7 @@ LIMITED_INTERACTIONS = {"raw/atis2/12-1.1/ATIS2/TEXT/TRAIN/SRI/QS0/1": 22,
 
 END_OF_INTERACTION = {"quit", "exit", "done"}
 
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class SchemaInteractionATISModel(ATISModel):
     """ Interaction ATIS model, where an interaction is processed all at once.
     """
@@ -255,10 +255,15 @@ class SchemaInteractionATISModel(ATISModel):
 
       return schema_states
 
-    def get_gnn_encoding(self,input_schema, gnn):
-        output = utils_bert.get_gnn_encoding(self.tokenizer, self.model_bert,None, input_schema, bert_input_version=self.params.bert_input_version) # tokenizer,input_sequence,input_schema,bert_input_version='v1',num_out_layers_h=1, max_seq_length=512,num_out_layers_n=1
+    def get_gnn_encoding(self,input_schema, gnn,gnn_encoder1):
+        schema_states, column_names = utils_bert.get_gnn_encoding(self.tokenizer, self.model_bert,None, input_schema,gnn, gnn_encoder1,embedder=self.input_embedder,bert_input_version=self.params.bert_input_version) # tokenizer,input_sequence,input_schema,bert_input_version='v1',num_out_layers_h=1, max_seq_length=512,num_out_layers_n=1
 
-        return output
+        input_schema.set_column_name_embeddings(schema_states,column_names=column_names)
+
+        # self-attention over schema_states
+        if self.params.use_schema_self_attention:
+            schema_states = self.encode_schema_self_attention(schema_states)
+        return schema_states
 
     def get_bert_encoding(self, input_sequence, input_schema, discourse_state, dropout):
         utterance_states, schema_token_states = utils_bert.get_bert_encoding(self.bert_config, self.model_bert, self.tokenizer, input_sequence, input_schema, bert_input_version=self.params.bert_input_version, num_out_layers_n=1, num_out_layers_h=1)
@@ -377,7 +382,8 @@ class SchemaInteractionATISModel(ATISModel):
             schema_states = self.encode_schema_bow_simple(input_schema)
 
         if input_schema and self.params.use_gnn and not self.params.use_bert:
-            schema_states = self.get_gnn_encoding(input_schema,self.gnn)
+            schema_states = self.get_gnn_encoding(input_schema,self.gnn,self.gnn_encoder1)
+            # _,schema_states = self.gnn_encoder2(schema_states)
 
         for utterance_index, utterance in enumerate(interaction.gold_utterances()):
             if interaction.identifier in LIMITED_INTERACTIONS and utterance_index > LIMITED_INTERACTIONS[interaction.identifier]:
@@ -516,7 +522,8 @@ class SchemaInteractionATISModel(ATISModel):
             schema_states = self.encode_schema_bow_simple(input_schema)
 
         if input_schema and self.params.use_gnn and not self.params.use_bert:
-            schema_states = self.get_gnn_encoding(input_schema,self.gnn)
+            schema_states = self.get_gnn_encoding(input_schema,self.gnn,self.gnn_encoder1)
+            # _,schema_states = self.gnn_encoder2(schema_states)
 
         interaction.start_interaction()
         while not interaction.done():
@@ -633,8 +640,8 @@ class SchemaInteractionATISModel(ATISModel):
             schema_states = self.encode_schema_bow_simple(input_schema)
 
         if input_schema and self.params.use_gnn and not self.params.use_bert:
-            schema_states = self.get_gnn_encoding(input_schema,self.gnn)
-            _,schema_states = self.gnn_encoder(schema_states)
+            schema_states = self.get_gnn_encoding(input_schema,self.gnn,self.gnn_encoder1)
+            # _,schema_states = self.gnn_encoder2(schema_states)
 
 
         for utterance in interaction.gold_utterances():

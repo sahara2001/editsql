@@ -86,15 +86,19 @@ def normalize_space(format_sql):
 def get_candidate_tables(format_sql, schema):
   candidate_tables = []
 
-  tokens = format_sql.split()
+  tokens = format_sql.replace(' . ','.').split()
+  print(format_sql,format_sql.replace(' . ','.'),tokens)
+
   for ii, token in enumerate(tokens):
     if '.' in token:
+      # print(token)
       table_name = token.split('.')[0]
       candidate_tables.append(table_name)
 
   candidate_tables = list(set(candidate_tables))
 
   table_names_original = [table_name.lower() for table_name in schema['table_names_original']]
+  print(candidate_tables,table_names_original)
   candidate_tables_id = [table_names_original.index(table_name) for table_name in candidate_tables]
 
   assert -1 not in candidate_tables_id

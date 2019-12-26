@@ -12,6 +12,30 @@ import data_util.snippets as snippet_handler
 from . import embedder
 from data_util.vocabulary import EOS_TOK, UNK_TOK
 
+from difflib import SequenceMatcher
+
+def longest_common_substring(s1, s2):
+    current_match_start = -1
+    current_match_end = -1
+
+    best_match_start = current_match_start
+    best_match_end = current_match_end
+
+    min_len = min(len(s1), len(s2))
+    for i in range(min_len):
+        if s1[i] == s2[i]:
+            current_match_start = current_match_end = i
+            j = 0
+            while s1[i+j] == s2[i+j] and i+j < min_len:
+               j += 1
+            current_match_end = current_match_start + j
+
+            if current_match_end - current_match_start > best_match_end - best_match_start:
+                best_match_start = current_match_start
+                best_match_end = current_match_end
+
+    return s1[best_match_start:best_match_end]
+
 def flatten_distribution(distribution_map, probabilities):
     """ Flattens a probability distribution given a map of "unique" values.
         All values in distribution_map with the same value should get the sum
@@ -114,7 +138,24 @@ class SequencePredictorWithSchema(torch.nn.Module):
             output_token_embedding = embedder.bow_snippets(output_token, snippets, self.output_embedder, input_schema)
         else:
             if input_schema:
-                assert self.output_embedder.in_vocabulary(output_token) or input_schema.in_vocabulary(output_token, surface_form=True)
+                # print(output_token)
+                # if output_token == 
+                if not (self.output_embedder.in_vocabulary(output_token) or input_schema.in_vocabulary(output_token, surface_form=True)):
+                    #find most similar token in schema
+                    if output_token.index('ref') != -1:
+                        input_schema.column_names_embedder_input['ref_template_type'] = input_schema.column_names_embedder_input['reference_template_type']
+                        input_schema.column_names_surface_form['ref_template_type'] = input_schema.column_names_surface_form['reference_template_type']
+                    best_match = None
+                    max_len = 0
+                    for i in input_schema.column_names_embedder_input:
+                        # print(i)
+                        s = SequenceMatcher(None, i, output_token)
+                        _,_,match = s.find_longest_match(0, len(i), 0, len(output_token))
+                        if match > max_len and input_schema.in_vocabulary(i,True):
+                            best_match = i
+                    print('Origin',output_token,'Best', best_match)
+                    output_token = best_match
+
                 if self.output_embedder.in_vocabulary(output_token):
                     output_token_embedding = self.output_embedder(output_token)
                 else:
@@ -182,7 +223,7 @@ class SequencePredictorWithSchema(torch.nn.Module):
 
                 if gold_sequence:
                     output_token = gold_sequence[index]
-
+                    # print(gold_sequence)
                     output_token_embedding = self.get_output_token_embedding(output_token, input_schema, snippets)
 
                     decoder_input = self.get_decoder_input(output_token_embedding, prediction)
