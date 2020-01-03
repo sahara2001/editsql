@@ -31,7 +31,7 @@ class ATISDataset():
             if 'removefrom' not in params.data_directory:
                 database_schema, column_names_surface_form, column_names_embedder_input = self.read_database_schema_simple(params.database_schema_filename)
             else:
-                database_schema, column_names_surface_form, column_names_embedder_input = self.read_database_schema(params.database_schema_filename)
+                database_schema, column_names_surface_form, column_names_embedder_input = self.read_database_schema(params.database_schema_filename) # Modified
 
         int_load_function = load_function(params,
                                           self.entities_dictionary,
@@ -147,6 +147,7 @@ class ATISDataset():
             db_id = table_schema['db_id']
             database_schema_dict[db_id] = table_schema
 
+            relations = table_schema['relations']
             column_names = table_schema['column_names']
             column_names_original = table_schema['column_names_original']
             table_names = table_schema['table_names']
@@ -173,10 +174,11 @@ class ATISDataset():
     def read_database_schema(self, database_schema_filename):
         with open(database_schema_filename, "r") as f:
             database_schema = json.load(f)
-
+        # print(database_schema, len(database_schema))
         database_schema_dict = {}
         column_names_surface_form = []
         column_names_embedder_input = []
+        relations = []
         for table_schema in database_schema:
             db_id = table_schema['db_id']
             database_schema_dict[db_id] = table_schema
@@ -185,6 +187,9 @@ class ATISDataset():
             column_names_original = table_schema['column_names_original']
             table_names = table_schema['table_names']
             table_names_original = table_schema['table_names_original']
+            
+            ## NOTE: add relations
+            relations.append(table_schema['relation'])
 
             for i, (table_id, column_name) in enumerate(column_names_original):
                 if table_id >= 0:

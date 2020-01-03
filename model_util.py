@@ -410,8 +410,8 @@ def evaluate_interaction_sample(sample,
         #     continue
         # try:
             # print(i)
-        if i == 0:
-            print(interaction.interaction,interaction.interaction.utterances,interaction.interaction.schema.column_names_surface_form,interaction.interaction.input_seqs())
+        # if i == 0:
+            # print(interaction.interaction,interaction.interaction.utterances,interaction.interaction.schema.column_names_surface_form,interaction.interaction.input_seqs())
         with torch.no_grad():
             if use_predicted_queries:
                 # print(111111)

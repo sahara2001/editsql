@@ -429,12 +429,18 @@ def prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length,pa
     hds = []
 
     nlu_t1 = input_sequence # segmented question
-    all_hds = input_schema.column_names_embedder_input      # table name . column
+    all_hds = input_schema.column_names_surface_form      # table name.column
 
     tables = []
     tb_name = {} # index of header in node - len(nodes)
     columns = {}
     nodes = []
+    
+    foreign_idx = [ i for i,j in input_schema.table_schema['foreign_keys']]
+    primary_idx = [ i for i in input_schema.table_schema['primary_keys']]
+    foreign_key = [-1] * len(foreign_idx)
+    # print(input_schema.table_schema['foreign_keys'])
+
     relations = [[],[],[]] # three edge types, we use tb_name.col as embedding 
     # print(relations)
     all_columns = {}
@@ -451,6 +457,7 @@ def prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length,pa
             # print(header,col)
             # first add headers
             nodes.append(i)
+            
             # if not col in columns:
             if not header in tables:
                 tables.append(header) 
@@ -461,6 +468,7 @@ def prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length,pa
             if col in columns: # find('id') != -1
                 # print('key')
                 relations[2].append([tb_name[header],columns[col]])  # add foreign key relation
+                # relations[0].append([tb_name[header],columns[col]])
             else:
                 # column id
                 columns[col] = len(nodes) -1
@@ -469,21 +477,44 @@ def prepare_input_gnn(tokenizer, input_sequence, input_schema, max_seq_length,pa
                 if col.find("id") != -1:
                     # print('primary')
                     relations[1].append([tb_name[header],columns[col]])
-                else:
-                    relations[0].append([tb_name[header],columns[col]])
- # for *
+                
+            if not (len(nodes) - 1 in foreign_idx or len(nodes)-1 in primary_idx):
+                relations[0].append([tb_name[header],columns[col]])
 
-    # nodes += tables
+            # find table name correspond to foreign key
+            
+            if len(nodes)-1 in foreign_idx:
+                # print(foreign_idx[0])
+                foreign_key[foreign_idx.index(len(nodes)-1)] = tb_name[header]
+
+ 
+    ## NOTE: foreign key relation can be column to column or table to column (we choose latter one)
     base = len(nodes)
     nodes += tables
-    for i in relations:
+
+    relations[0] = relations[0] #column
+    relations[1] = [[i,j] for i,j in enumerate(input_schema.table_schema['primary_keys'])]#primary
+    relations[2] = input_schema.table_schema['foreign_keys']#foriegn
+    for i,item in enumerate(foreign_key):
+        relations[2][i][0] = item
+    # nodes += tables
+    # print(1111111,input_schema.column_names_surface_form,relations, len(nodes),foreign_key,foreign_idx)
+    # exit(0)
+    for i in relations: 
         for j in i:
             j[0] += base
     # tokenize nodes to feed into model
     masks = []
-    new_schema = []
+
+    ## update new schema
+    new_schema = input_schema.column_names_surface_form
+    if len(new_schema) != len(nodes):
+        new_schema = input_schema.column_names_surface_form + tables
+    # if len(new_schema) != len(nodes):
+        # print(new_schema,nodes, len(nodes),len(new_schema))
+    assert len(new_schema) ==len(nodes)
     for i in range(len(nodes)):
-        new_schema.append(nodes[i])
+        # new_schema.append(nodes[i])
         # print(nodes[i])
         nodes[i] = tokenizer.tokenize(nodes[i])
         # print(nodes[i])
@@ -659,7 +690,19 @@ def get_gnn_encoding(tokenizer,model_bert,input_sequence,input_schema,gnn,gnn_en
 
     return output,new_schema
     
-def get_bert_encoding(bert_config, model_bert, tokenizer, input_sequence, input_schema, bert_input_version='v1', max_seq_length=512, num_out_layers_n=1, num_out_layers_h=1):
+def get_bert_encoding(bert_config, model_bert, tokenizer, input_sequence, input_schema, bert_input_version='v1', gnn=None ,use_gnn=True, max_seq_length=512, num_out_layers_n=1, num_out_layers_h=1):
+
+    # NOTE: add gnn above final output layer
+    #add input schema table
+    # print(11111111,input_schema.column_names_embedder_input,input_schema.column_names_surface_form)
+    relations = None
+    if use_gnn:
+        if not (input_schema.table_schema['table_names'][0] in input_schema.column_names_embedder_input):
+            input_schema.column_names_embedder_input += input_schema.table_schema['table_names']
+            input_schema.num_col += len(input_schema.table_schema['table_names'])
+            input_schema.column_names_surface_form += [i.lower() for i in input_schema.table_schema['table_names_original']]
+        nodes, relations, new_schema = prepare_input_gnn( tokenizer, input_sequence, input_schema, max_seq_length)
+
     if bert_input_version == 'v1':
         nlu_t, hds = prepare_input(tokenizer, input_sequence, input_schema, max_seq_length)
     elif bert_input_version == 'v2':
@@ -672,6 +715,7 @@ def get_bert_encoding(bert_config, model_bert, tokenizer, input_sequence, input_
     assert sum(len(t_to_tt_idx_hds1) for t_to_tt_idx_hds1 in t_to_tt_idx_hds) == len(input_schema.column_names_embedder_input)
 
     assert list(wemb_h.size())[0] == len(input_schema.column_names_embedder_input)
+    # print(22222222,len(input_schema.column_names_embedder_input),input_schema.column_names_embedder_input,input_schema.column_names_surface_form)
 
     utterance_states = []
     for i in range(len(t_to_tt_idx)):
@@ -701,4 +745,7 @@ def get_bert_encoding(bert_config, model_bert, tokenizer, input_sequence, input_
 
     assert len(schema_token_states) == len(input_schema.column_names_embedder_input)
 
-    return utterance_states, schema_token_states
+    if use_gnn:
+        return utterance_states, schema_token_states, relations
+    else:
+        return utterance_states, schema_token_states

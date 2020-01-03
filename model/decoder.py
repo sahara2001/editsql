@@ -141,8 +141,10 @@ class SequencePredictorWithSchema(torch.nn.Module):
                 # print(output_token)
                 # if output_token == 
                 if not (self.output_embedder.in_vocabulary(output_token) or input_schema.in_vocabulary(output_token, surface_form=True)):
+                    print(output_token,input_schema.column_names_surface_form)
+                    assert False
                     #find most similar token in schema
-                    if output_token.index('ref') != -1:
+                    if output_token.find('ref') != -1:
                         input_schema.column_names_embedder_input['ref_template_type'] = input_schema.column_names_embedder_input['reference_template_type']
                         input_schema.column_names_surface_form['ref_template_type'] = input_schema.column_names_surface_form['reference_template_type']
                     best_match = None
@@ -224,6 +226,7 @@ class SequencePredictorWithSchema(torch.nn.Module):
                 if gold_sequence:
                     output_token = gold_sequence[index]
                     # print(gold_sequence)
+                    # print('oooooooooooo')
                     output_token_embedding = self.get_output_token_embedding(output_token, input_schema, snippets)
 
                     decoder_input = self.get_decoder_input(output_token_embedding, prediction)
@@ -233,6 +236,7 @@ class SequencePredictorWithSchema(torch.nn.Module):
                     if index >= len(gold_sequence) - 1:
                         continue_generating = False
                 else:
+                    # print('aaaaaaaaaaaaaa')
                     assert prediction.scores.dim() == 1
                     probabilities = F.softmax(prediction.scores, dim=0).cpu().data.numpy().tolist()
 

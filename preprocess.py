@@ -38,7 +38,7 @@ def write_interaction(interaction_list,split,output_dir):
 
   return
 
-
+  ## NOTE: We add relation argument to get graph representation
 def read_database_schema(database_schema_filename, schema_tokens, column_names, database_schemas_dict):
   with open(database_schema_filename) as f:
     database_schemas = json.load(f)
@@ -49,6 +49,9 @@ def read_database_schema(database_schema_filename, schema_tokens, column_names, 
     column_names_original = table_schema['column_names_original']
     table_names = table_schema['table_names']
     table_names_original = table_schema['table_names_original']
+
+    
+
     for i, (table_id, column_name) in enumerate(column_names_original):
       if table_id >= 0:
         table_name = table_names_original[table_id]
@@ -66,12 +69,15 @@ def read_database_schema(database_schema_filename, schema_tokens, column_names, 
     return column_names_surface_form, column_names
 
   for table_schema in database_schemas:
+    # print(table_schema)
+    ## NOTE: Add relation
+    table_schema['relation'] = [table_schema['foreign_keys'],table_schema['primary_keys']] 
+    
     database_id = table_schema['db_id']
     database_schemas_dict[database_id] = table_schema
     schema_tokens[database_id], column_names[database_id] = get_schema_tokens(table_schema)
 
   return schema_tokens, column_names, database_schemas_dict
-
 
 def remove_from_with_join(format_sql_2):
   used_tables_list = []
@@ -504,13 +510,16 @@ def preprocess(dataset, remove_from=False):
   schema_tokens = {}
   column_names = {}
   database_schemas = {}
+  # relations = {}
 
   print('Reading spider database schema file')
-  schema_tokens, column_names, database_schemas = read_database_schema(database_schema_filename, schema_tokens, column_names, database_schemas)
+  schema_tokens, column_names, database_schemas = read_database_schema(database_schema_filename, schema_tokens, column_names,database_schemas)
   num_database = len(schema_tokens)
+  # print('num_relations', len(relations))
   print('num_database', num_database, len(train_database), len(dev_database))
   print('total number of schema_tokens / databases:', len(schema_tokens))
 
+  ## NOTE: Relations dump in db schema file
   output_database_schema_filename = os.path.join(output_dir, 'tables.json')
   with open(output_database_schema_filename, 'w') as outfile:
     json.dump([v for k,v in database_schemas.items()], outfile, indent=4)
@@ -524,6 +533,7 @@ def preprocess(dataset, remove_from=False):
 
   print('interaction_list length', len(interaction_list))
 
+  ## TODO: modify for two database
   train_interaction = []
   for database_id in interaction_list:
     if database_id not in dev_database:

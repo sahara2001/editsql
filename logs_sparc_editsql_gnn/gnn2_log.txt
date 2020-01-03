@@ -1,0 +1,243 @@
+Original number of training utterances:	8987
+Actual number of used training examples:	3024
+(Shortened by output limit of 200)
+Number of steps per epoch:	3024
+Batch size:	1
+Epoch:	0
+train epoch loss:	0.2420661240513067
+train final gold-passing LOSS:	83.30
+train final gold-passing TOKEN_ACCURACY:	76.40
+train final gold-passing STRING_ACCURACY:	15.67
+valid gold-passing LOSS:	95.73
+valid gold-passing TOKEN_ACCURACY:	73.48
+valid gold-passing STRING_ACCURACY:	14.21
+maximum string accuracy:	14.214463840399002
+patience:	10.1
+save file:	logs_sparc_editsql_gnn/save_0
+countdown:	9
+
+Epoch:	1
+train epoch loss:	0.1453388607112593
+train final gold-passing LOSS:	57.97
+train final gold-passing TOKEN_ACCURACY:	82.98
+train final gold-passing STRING_ACCURACY:	28.67
+valid gold-passing LOSS:	89.24
+valid gold-passing TOKEN_ACCURACY:	76.29
+valid gold-passing STRING_ACCURACY:	16.21
+maximum string accuracy:	16.209476309226932
+patience:	10.201
+save file:	logs_sparc_editsql_gnn/save_1
+countdown:	9
+
+Epoch:	2
+train epoch loss:	0.11288037181953701
+train final gold-passing LOSS:	51.41
+train final gold-passing TOKEN_ACCURACY:	85.54
+train final gold-passing STRING_ACCURACY:	34.67
+valid gold-passing LOSS:	86.17
+valid gold-passing TOKEN_ACCURACY:	77.58
+valid gold-passing STRING_ACCURACY:	18.79
+maximum string accuracy:	18.78636741479634
+patience:	10.30301
+save file:	logs_sparc_editsql_gnn/save_2
+countdown:	9
+
+Epoch:	3
+train epoch loss:	0.09222571446039977
+train final gold-passing LOSS:	37.41
+train final gold-passing TOKEN_ACCURACY:	88.83
+train final gold-passing STRING_ACCURACY:	43.33
+valid gold-passing LOSS:	90.82
+valid gold-passing TOKEN_ACCURACY:	78.25
+valid gold-passing STRING_ACCURACY:	19.45
+learning rate coefficient:	0.8
+maximum string accuracy:	19.45137157107232
+patience:	10.4060401
+save file:	logs_sparc_editsql_gnn/save_3
+countdown:	9
+
+Epoch:	4
+train epoch loss:	0.07191761492507524
+train final gold-passing LOSS:	29.10
+train final gold-passing TOKEN_ACCURACY:	91.87
+train final gold-passing STRING_ACCURACY:	55.00
+valid gold-passing LOSS:	82.65
+valid gold-passing TOKEN_ACCURACY:	79.27
+valid gold-passing STRING_ACCURACY:	21.11
+maximum string accuracy:	21.11388196176226
+patience:	10.510100501
+save file:	logs_sparc_editsql_gnn/save_4
+countdown:	9
+
+Epoch:	5
+train epoch loss:	0.06109570532145734
+train final gold-passing LOSS:	23.97
+train final gold-passing TOKEN_ACCURACY:	92.70
+train final gold-passing STRING_ACCURACY:	59.33
+valid gold-passing LOSS:	90.85
+valid gold-passing TOKEN_ACCURACY:	79.78
+valid gold-passing STRING_ACCURACY:	23.28
+learning rate coefficient:	0.6400000000000001
+maximum string accuracy:	23.275145469659186
+patience:	10.615201506010001
+save file:	logs_sparc_editsql_gnn/save_5
+countdown:	9
+
+Epoch:	6
+train epoch loss:	0.045115539297838465
+train final gold-passing LOSS:	19.01
+train final gold-passing TOKEN_ACCURACY:	95.29
+train final gold-passing STRING_ACCURACY:	71.33
+valid gold-passing LOSS:	99.82
+valid gold-passing TOKEN_ACCURACY:	79.91
+valid gold-passing STRING_ACCURACY:	22.61
+learning rate coefficient:	0.5120000000000001
+countdown:	8
+
+Epoch:	7
+train epoch loss:	0.03395941968045239
+train final gold-passing LOSS:	15.65
+train final gold-passing TOKEN_ACCURACY:	95.88
+train final gold-passing STRING_ACCURACY:	75.67
+valid gold-passing LOSS:	101.77
+valid gold-passing TOKEN_ACCURACY:	80.22
+valid gold-passing STRING_ACCURACY:	22.86
+learning rate coefficient:	0.40960000000000013
+countdown:	7
+
+Epoch:	8
+train epoch loss:	0.025478694378479314
+train final gold-passing LOSS:	14.18
+train final gold-passing TOKEN_ACCURACY:	96.69
+train final gold-passing STRING_ACCURACY:	80.33
+valid gold-passing LOSS:	116.39
+valid gold-passing TOKEN_ACCURACY:	79.39
+valid gold-passing STRING_ACCURACY:	21.36
+learning rate coefficient:	0.32768000000000014
+countdown:	6
+
+Epoch:	9
+train epoch loss:	0.019483312287130978
+train final gold-passing LOSS:	12.24
+train final gold-passing TOKEN_ACCURACY:	97.87
+train final gold-passing STRING_ACCURACY:	87.33
+valid gold-passing LOSS:	120.07
+valid gold-passing TOKEN_ACCURACY:	79.84
+valid gold-passing STRING_ACCURACY:	23.44
+learning rate coefficient:	0.2621440000000001
+maximum string accuracy:	23.44139650872818
+patience:	10.721353521070101
+save file:	logs_sparc_editsql_gnn/save_9
+countdown:	9
+
+Epoch:	10
+train epoch loss:	0.014619802326576552
+train final gold-passing LOSS:	11.56
+train final gold-passing TOKEN_ACCURACY:	98.23
+train final gold-passing STRING_ACCURACY:	90.00
+valid gold-passing LOSS:	123.66
+valid gold-passing TOKEN_ACCURACY:	80.05
+valid gold-passing STRING_ACCURACY:	23.03
+learning rate coefficient:	0.2097152000000001
+countdown:	8
+
+Epoch:	11
+train epoch loss:	0.011636802042021624
+train final gold-passing LOSS:	9.16
+train final gold-passing TOKEN_ACCURACY:	98.54
+train final gold-passing STRING_ACCURACY:	91.00
+valid gold-passing LOSS:	131.26
+valid gold-passing TOKEN_ACCURACY:	80.18
+valid gold-passing STRING_ACCURACY:	23.28
+learning rate coefficient:	0.1677721600000001
+countdown:	7
+
+Epoch:	12
+train epoch loss:	0.009089672141099616
+train final gold-passing LOSS:	9.05
+train final gold-passing TOKEN_ACCURACY:	98.77
+train final gold-passing STRING_ACCURACY:	93.67
+valid gold-passing LOSS:	135.61
+valid gold-passing TOKEN_ACCURACY:	80.22
+valid gold-passing STRING_ACCURACY:	22.53
+learning rate coefficient:	0.13421772800000006
+countdown:	6
+
+Epoch:	13
+train epoch loss:	0.007596005528017098
+train final gold-passing LOSS:	9.53
+train final gold-passing TOKEN_ACCURACY:	98.90
+train final gold-passing STRING_ACCURACY:	94.33
+valid gold-passing LOSS:	140.22
+valid gold-passing TOKEN_ACCURACY:	80.04
+valid gold-passing STRING_ACCURACY:	22.36
+learning rate coefficient:	0.10737418240000006
+countdown:	5
+
+Epoch:	14
+train epoch loss:	0.006472862771183611
+train final gold-passing LOSS:	9.14
+train final gold-passing TOKEN_ACCURACY:	98.83
+train final gold-passing STRING_ACCURACY:	94.33
+valid gold-passing LOSS:	147.52
+valid gold-passing TOKEN_ACCURACY:	79.93
+valid gold-passing STRING_ACCURACY:	22.19
+learning rate coefficient:	0.08589934592000005
+countdown:	4
+
+Epoch:	15
+train epoch loss:	0.005533345134003897
+train final gold-passing LOSS:	9.23
+train final gold-passing TOKEN_ACCURACY:	98.88
+train final gold-passing STRING_ACCURACY:	94.67
+valid gold-passing LOSS:	147.78
+valid gold-passing TOKEN_ACCURACY:	80.13
+valid gold-passing STRING_ACCURACY:	22.53
+learning rate coefficient:	0.06871947673600004
+countdown:	3
+
+Epoch:	16
+train epoch loss:	0.0049837164944950335
+train final gold-passing LOSS:	9.23
+train final gold-passing TOKEN_ACCURACY:	98.94
+train final gold-passing STRING_ACCURACY:	95.00
+valid gold-passing LOSS:	150.50
+valid gold-passing TOKEN_ACCURACY:	80.42
+valid gold-passing STRING_ACCURACY:	22.94
+learning rate coefficient:	0.054975581388800036
+countdown:	2
+
+Epoch:	17
+train epoch loss:	0.004448428555152035
+train final gold-passing LOSS:	8.99
+train final gold-passing TOKEN_ACCURACY:	98.91
+train final gold-passing STRING_ACCURACY:	94.67
+valid gold-passing LOSS:	153.98
+valid gold-passing TOKEN_ACCURACY:	80.52
+valid gold-passing STRING_ACCURACY:	23.36
+learning rate coefficient:	0.043980465111040035
+countdown:	1
+
+Epoch:	18
+train epoch loss:	0.004176350127954638
+train final gold-passing LOSS:	8.73
+train final gold-passing TOKEN_ACCURACY:	98.97
+train final gold-passing STRING_ACCURACY:	95.33
+valid gold-passing LOSS:	155.88
+valid gold-passing TOKEN_ACCURACY:	80.41
+valid gold-passing STRING_ACCURACY:	22.69
+learning rate coefficient:	0.03518437208883203
+countdown:	0
+
+Epoch:	19
+train epoch loss:	0.004133328618887414
+train final gold-passing LOSS:	8.78
+train final gold-passing TOKEN_ACCURACY:	98.92
+train final gold-passing STRING_ACCURACY:	94.67
+valid gold-passing LOSS:	158.07
+valid gold-passing TOKEN_ACCURACY:	80.49
+valid gold-passing STRING_ACCURACY:	22.94
+learning rate coefficient:	0.028147497671065627
+countdown:	-1
+
+Finished training!

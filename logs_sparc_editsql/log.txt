@@ -4,3 +4,55 @@ Actual number of used training examples:	3024
 Number of steps per epoch:	3024
 Batch size:	1
 Epoch:	0
+train epoch loss:	0.14563038951910995
+train final gold-passing LOSS:	41.53
+train final gold-passing TOKEN_ACCURACY:	87.92
+train final gold-passing STRING_ACCURACY:	43.67
+valid gold-passing LOSS:	46.78
+valid gold-passing TOKEN_ACCURACY:	86.87
+valid gold-passing STRING_ACCURACY:	38.65
+maximum string accuracy:	38.65336658354115
+patience:	10.1
+save file:	logs_sparc_editsql/save_0
+countdown:	9
+
+Epoch:	1
+train epoch loss:	0.08056554565123478
+train final gold-passing LOSS:	31.57
+train final gold-passing TOKEN_ACCURACY:	90.39
+train final gold-passing STRING_ACCURACY:	48.67
+valid gold-passing LOSS:	42.82
+valid gold-passing TOKEN_ACCURACY:	87.76
+valid gold-passing STRING_ACCURACY:	42.73
+maximum string accuracy:	42.7265170407315
+patience:	10.201
+save file:	logs_sparc_editsql/save_1
+countdown:	9
+
+Epoch:	2
+train epoch loss:	0.06147785145226594
+train final gold-passing LOSS:	26.26
+train final gold-passing TOKEN_ACCURACY:	92.36
+train final gold-passing STRING_ACCURACY:	56.00
+valid gold-passing LOSS:	41.90
+valid gold-passing TOKEN_ACCURACY:	88.17
+valid gold-passing STRING_ACCURACY:	45.55
+maximum string accuracy:	45.552784704904404
+patience:	10.30301
+save file:	logs_sparc_editsql/save_2
+countdown:	9
+
+Epoch:	3
+train epoch loss:	0.05028184989633862
+train final gold-passing LOSS:	19.25
+train final gold-passing TOKEN_ACCURACY:	94.16
+train final gold-passing STRING_ACCURACY:	66.67
+valid gold-passing LOSS:	41.76
+valid gold-passing TOKEN_ACCURACY:	89.21
+valid gold-passing STRING_ACCURACY:	48.55
+maximum string accuracy:	48.5453034081463
+patience:	10.4060401
+save file:	logs_sparc_editsql/save_3
+countdown:	9
+
+Epoch:	4

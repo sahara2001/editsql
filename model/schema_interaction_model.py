@@ -21,7 +21,8 @@ from .decoder import SequencePredictorWithSchema
 from . import utils_bert
 
 import data_util.atis_batch
-
+from .gated_graph_conv import GatedGraphConv
+from .encoder import Encoder, Encoder_Gnn
 
 LIMITED_INTERACTIONS = {"raw/atis2/12-1.1/ATIS2/TEXT/TRAIN/SRI/QS0/1": 22,
                         "raw/atis3/17-1.1/ATIS3/SP_TRN/MIT/8K7/5": 14,
@@ -57,6 +58,19 @@ class SchemaInteractionATISModel(ATISModel):
                 schema_encoder_input_size = self.bert_config.hidden_size
 
             self.schema_encoder = SchemaEncoder1(schema_encoder_num_layer, schema_encoder_input_size, schema_encoder_state_size)
+
+        if params.use_gnn and not params.use_bert:
+            # use bert to encoder nodes
+            self.model_bert, self.tokenizer, self.bert_config = utils_bert.get_bert(params)
+
+            encoder_input_size = self.bert_config.hidden_size
+            encoder_output_size = params.encoder_state_size
+
+            self.gnn = GatedGraphConv(encoder_output_size, 2, 3) #input_dim, num_timesteps, num_edge_types,
+
+            # two encoders, the second one summarize from bert embedding of nodes, the first one generate one embedding for schema
+            self.gnn_encoder1 = Encoder_Gnn(1, encoder_input_size, encoder_output_size) #num_layers, input_size, state_size
+            self.gnn_encoder2 = Encoder_Gnn(1, encoder_output_size, encoder_output_size)
 
         # self-attention
         if self.params.use_schema_self_attention:
@@ -265,8 +279,8 @@ class SchemaInteractionATISModel(ATISModel):
             schema_states = self.encode_schema_self_attention(schema_states)
         return schema_states
 
-    def get_bert_encoding(self, input_sequence, input_schema, discourse_state, dropout):
-        utterance_states, schema_token_states = utils_bert.get_bert_encoding(self.bert_config, self.model_bert, self.tokenizer, input_sequence, input_schema, bert_input_version=self.params.bert_input_version, num_out_layers_n=1, num_out_layers_h=1)
+    def get_bert_encoding(self, input_sequence, input_schema, discourse_state, dropout, gnn=None, use_gnn=False):
+        utterance_states, schema_token_states, relations = utils_bert.get_bert_encoding(self.bert_config, self.model_bert, self.tokenizer, input_sequence, input_schema, bert_input_version=self.params.bert_input_version, gnn=self.gnn,use_gnn=self.params.use_gnn ,num_out_layers_n=1, num_out_layers_h=1)
 
         if self.params.discourse_level_lstm:
             utterance_token_embedder = lambda x: torch.cat([x, discourse_state], dim=0)
@@ -292,6 +306,14 @@ class SchemaInteractionATISModel(ATISModel):
 
             # final_schema_state_one: 1 means hidden_states instead of cell_memories, -1 means last layer
             schema_states.append(final_schema_state_one[1][-1])
+
+        
+        if use_gnn:
+            # print(len(schema_states),schema_states[0].size())
+            relations = [torch.tensor(i, dtype=torch.long).to(device) for i in relations]
+            # print(333333,relations, all_encoder_layer.size())
+            schema_token_states = torch.cat([i.unsqueeze(0) for i in schema_states],0) 
+            schema_token_states = [i for i in gnn(schema_token_states,relations)]
 
         input_schema.set_column_name_embeddings(schema_states)
 
@@ -415,7 +437,7 @@ class SchemaInteractionATISModel(ATISModel):
                     utterance_token_embedder,
                     dropout_amount=self.dropout)
             else:
-                final_utterance_state, utterance_states, schema_states = self.get_bert_encoding(input_sequence, input_schema, discourse_state, dropout=True)
+                final_utterance_state, utterance_states, schema_states = self.get_bert_encoding(input_sequence, input_schema, discourse_state, gnn=self.gnn,use_gnn=self.params.use_gnn,dropout=True)
 
             input_hidden_states.extend(utterance_states)
             input_sequences.append(input_sequence)
@@ -543,7 +565,7 @@ class SchemaInteractionATISModel(ATISModel):
                     input_sequence,
                     utterance_token_embedder)
             else:
-                final_utterance_state, utterance_states, schema_states = self.get_bert_encoding(input_sequence, input_schema, discourse_state, dropout=False)
+                final_utterance_state, utterance_states, schema_states = self.get_bert_encoding(input_sequence, input_schema, discourse_state,gnn=self.gnn,use_gnn=self.params.use_gnn, dropout=False)
 
             input_hidden_states.extend(utterance_states)
             input_sequences.append(input_sequence)

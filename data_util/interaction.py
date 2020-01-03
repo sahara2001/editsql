@@ -19,6 +19,10 @@ class Schema:
 
     def helper1(self, table_schema):
         self.table_schema = table_schema
+        # NOTE: Relations
+        if 'relation' in table_schema:
+
+            self.relations = table_schema['relation']
         column_names = table_schema['column_names']
         column_names_original = table_schema['column_names_original']
         table_names = table_schema['table_names']
@@ -67,6 +71,10 @@ class Schema:
 
     def helper2(self, table_schema):
         self.table_schema = table_schema
+        # NOTE: Relations
+        if 'relation' in table_schema:
+
+            self.relations = table_schema['relation']
         column_names = table_schema['column_names']
         column_names_original = table_schema['column_names_original']
         table_names = table_schema['table_names']
@@ -195,7 +203,7 @@ class Schema:
     def in_vocabulary(self, column_name, surface_form=False):
         # print(column_name)
         if surface_form:
-            print(self.column_names_surface_form_to_id)
+            # print(self.column_names_surface_form_to_id)
             return column_name in self.column_names_surface_form_to_id
         else:
             return column_name in self.column_names_embedder_input_to_id
@@ -213,18 +221,27 @@ class Schema:
         return torch.mean(column_name_embeddings, dim=0)
 
     def set_column_name_embeddings(self, column_name_embeddings, column_names=None):
-        # print(self.column_names_embedder_input_to_id,self.column_names_surface_form_to_id)
-        if column_names and len(column_names[1]) > 1 :
+        # print(111111111,self.column_names_embedder_input_to_id,self.column_names_surface_form_to_id,column_names)
+        # a = self.column_names_embedder_input_to_id.copy()
+        if column_names:
             # print(1231213123,column_names)
+            self.column_names_surface_form_to_id = {}
+            self.column_names_embedder_input_to_id = {}
+
             self.column_names_surface_form = column_names
             
             # surface form is not quite correct
-            self.column_names_embedder_input = [i.replace(" . ", ".").replace(" ","_") for i in column_names]
-            self.column_names_surface_form = [i.replace(" . ", ".").replace(" ","_").replace("."," . ") for i in column_names]
+            self.column_names_surface_form = [i.strip().replace(" ","_") for i in column_names]
+            self.column_names_embedder_input = [i.replace('.',' . ').replace('_',' ').replace(' . ','.') for i in column_names]
+            
             for i,item in enumerate(self.column_names_surface_form):
+                # print(item)
+                # assert item.find(' . ') != -1 or item.find('*') != -1 or len(item.split())==1
                 self.column_names_surface_form_to_id[item] = i
             for i,item in enumerate(self.column_names_embedder_input):
                 self.column_names_embedder_input_to_id[item] = i
+            # print(2222222222,self.column_names_embedder_input_to_id,self.column_names_surface_form_to_id)
+
             # print(self.column_names_embedder_input)
             # print(self.column_names_surface_form)
         #     len1 = len(self.column_names_surface_form)
@@ -356,6 +373,7 @@ def load_function(parameters,
             if 'removefrom' not in parameters.data_directory:
                 schema = Schema(database_schema[database_id], simple=True)
             else:
+                print(1)
                 schema = Schema(database_schema[database_id])
 
         snippet_bank = []

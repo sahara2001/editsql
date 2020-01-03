@@ -74,8 +74,8 @@ def encode_snippets_with_states(snippets, states):
     return snippets
 
 def load_word_embeddings(input_vocabulary, output_vocabulary, output_vocabulary_schema, params):
-  print(output_vocabulary.inorder_tokens)
-  print()
+#   print(output_vocabulary.inorder_tokens)
+#   print()
 
   def read_glove_embedding(embedding_filename, embedding_size):
     glove_embeddings = {}
@@ -146,21 +146,17 @@ class ATISModel(torch.nn.Module):
         if params.use_bert:
             self.model_bert, self.tokenizer, self.bert_config = utils_bert.get_bert(params)
 
-        if params.use_gnn:
-            # use bert to encoder nodes
-            self.model_bert, self.tokenizer, self.bert_config = utils_bert.get_bert(params)
-
-            encoder_input_size = self.bert_config.hidden_size
-            encoder_output_size = params.encoder_state_size
-
-            self.gnn = GatedGraphConv(encoder_output_size, 2, 3) #input_dim, num_timesteps, num_edge_types,
-
-            # two encoders, the second one summarize from bert embedding of nodes, the first one generate one embedding for schema
-            self.gnn_encoder1 = Encoder_Gnn(1, encoder_input_size, encoder_output_size) #num_layers, input_size, state_size
-            self.gnn_encoder2 = Encoder_Gnn(1, encoder_output_size, encoder_output_size)
+        self.gnn=None
+        
 
         if 'atis' not in params.data_directory:
             if params.use_bert:
+                if params.use_gnn:
+                    encoder_input_size = self.bert_config.hidden_size
+                    encoder_output_size = params.encoder_state_size
+
+                    self.gnn = GatedGraphConv(encoder_output_size, 2, 3) #input_dim, num_timesteps, num_edge_types,
+
                 input_vocabulary_embeddings, output_vocabulary_embeddings, output_vocabulary_schema_embeddings, input_embedding_size = load_word_embeddings(input_vocabulary, output_vocabulary, output_vocabulary_schema, params)
 
                 # Create the output embeddings
